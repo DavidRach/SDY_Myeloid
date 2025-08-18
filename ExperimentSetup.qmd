@@ -1,0 +1,17 @@
+---
+title: "Experiment Setup"
+format: html
+---
+
+```{r}
+library(HEULog)
+```
+
+```{r}
+NewExperiment(project="SDY_Myeloid", retroactiveDate="2025-08-06", DayHedge=0) 
+```
+
+```{r}
+print("Done")
+```
+

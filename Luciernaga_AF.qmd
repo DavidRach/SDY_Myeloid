@@ -1,0 +1,78 @@
+---
+title: "Luciernaga Autofluorescence"
+format: html
+---
+
+# Load Library
+
+```{r}
+#| warning: FALSE
+#| message: FALSE
+library(flowCore)
+library(flowWorkspace)
+library(openCyto)
+library(stringr)
+library(data.table)
+library(Luciernaga)
+library(dplyr)
+```
+
+```{r}
+Location <- file.path("/home", "david", "Desktop", "Luciernaga_Checks", "Raw")
+FCSFiles <- list.files(Location, pattern=".fcs", full.names=TRUE, recursive=FALSE)
+Samples <- FCSFiles #[!stringr::str_detect(FCSFiles, "Reference")]
+```
+
+```{r}
+ExperimentsPresent <- sub("-.*", "", basename(Samples)) |> unique()
+```
+
+```{r}
+#| eval: FALSE
+
+# Setup for data folder and ProcessedExperiments.csv
+IsDataPresent <- list.files(include.dirs=TRUE)
+if (!any(IsDataPresent %in% "data")){dir.create("data")}
+CSVFiles <- list.files("data", pattern="VisualizedExperiments_AF.csv")
+
+if (length(CSVFiles) == 0){
+    ProcessedExperiments <- data.frame(Experiment="Test", Date="2000-01-01")
+    filename <- "VisualizedExperiments_AF.csv"
+    StorageLocation <- file.path("data", filename)
+    write.csv(ProcessedExperiments, StorageLocation, row.names=FALSE)
+}
+```
+
+```{r}
+CSV <- "data/VisualizedExperiments_AF.csv"
+
+Data <- read.csv(CSV, check.names=FALSE)
+AlreadyVisualized <- Data |> pull(Experiment)
+
+#walk(.f=ExperimentVisualized, .x=ExperimentsPresent, visualized=AlreadyVisualized, files=Samples, conditions=c("Ctrl", "PPD", "SEB"), template="GatesUnmixed.csv", UnityY="Spark Blue 550-A", UnityX="Pacific Blue-A")
+```
+
+# Processing
+
+```{r}
+ExperimentsPresent <- "2025-08-06"
+x <- "2025-08-06"
+
+purrr::walk(.x=ExperimentsPresent, .f=AutofluoresceShop, 
+visualized=AlreadyVisualized, files=Samples, template="GatesRaw.csv",
+AFOverlap="AutofluorescentOverlaps.csv")
+```
+
+
+# Main Autofluorescences 
+
+```{r}
+Location <- file.path("LabNotebook")
+Files <- list.files(Location, pattern="AFData", full.names=TRUE, recursive=TRUE)
+Files
+
+Dataset <- purrr::map(.x=Files, .f=read.csv, check.names=FALSE) |> dplyr::bind_rows()
+#nrow(Dataset)
+#sub("_.*", "", Dataset$Cluster) |> unique()
+```
+

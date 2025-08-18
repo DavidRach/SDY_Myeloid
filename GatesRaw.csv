@@ -1,0 +1,7 @@
+alias,pop,parent,dims,gating_method,gating_args,collapseDataForGating,groupBy,preprocessing_method,preprocessing_args
+singletsFSC,+,root,"FSC-A,FSC-H",singletGate,,FALSE,NA,NA,NA
+singletsSSC,+,singletsFSC,"SSC-A,SSC-H",singletGate,,FALSE,NA,NA,NA
+singletsSSCB,+,singletsSSC,"SSC-A,SSC-B-A",singletGate,,FALSE,NA,NA,NA
+nonDebris,+,singletsSSCB,FSC-A,gate_mindensity,"gate_range=c(1.25e6, 1.5e6)",FALSE,NA,NA,NA
+nonMonocytes,-,nonDebris,SSC-A,gate_mindensity,"gate_range=c(2e6, 3e6)",FALSE,NA,NA,NA
+lymphocytes,+,nonMonocytes,"FSC-A, SSC-A",flowClust,"K=2, target=c(2e6, 5e5)",FALSE,NA,NA,NA
