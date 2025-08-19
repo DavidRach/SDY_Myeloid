@@ -22,7 +22,7 @@ library(flowCore)
 ```{r}
 Location <- file.path("/home", "david", "Desktop", "Luciernaga_Checks")
 FCSFiles <- list.files(Location, pattern=".fcs", full.names=TRUE, recursive=FALSE)
-Samples <- FCSFiles#[stringr::str_detect(FCSFiles, "NoTags")] #OneTagUV7 #OneTagV7 #TwoTag
+Samples <- FCSFiles[stringr::str_detect(FCSFiles, "NoTags")] #OneTagUV7 #OneTagV7 #TwoTag
 ```
 
 ```{r}
@@ -50,8 +50,13 @@ CSV <- "data/ProcessedExperiments.csv"
 Data <- read.csv(CSV, check.names=FALSE)
 AlreadyVisualized <- Data |> pull(Experiment)
 
-walk(.f=ExperimentVisualized, .x="2025-08-06", visualized=AlreadyVisualized, files=Samples, conditions=c("Exp6"), template="GatesUnmixed.csv", UnityY="BV570-A", UnityX="BV650-A", GatePlots=TRUE, RidgePlots=FALSE, UnityPlots=TRUE, OneByNPlots=FALSE, Docker=FALSE, Override=TRUE, nameOverride=TRUE, marginsubset="nonDebris", ridgesubset="monocytes", AllUnity=c("BV570-A", "BV605-A", "BV650-A", "PE-A"),
-)
+This <- "2025-08-06"
+
+walk(.f=ExperimentVisualized, .x=This, visualized=AlreadyVisualized, files=Samples, conditions=c("Exp6"), template="GatesUnmixed.csv", UnityY="BV570-A", UnityX="BV650-A", GatePlots=FALSE, RidgePlots=FALSE, UnityPlots=TRUE, OneByNPlots=FALSE, Docker=FALSE, Override=TRUE, nameOverride=TRUE, marginsubset="nonDebris", mainsubset="monocytes",
+AllUnity=c("BUV395-A", "BUV563-A", "BUV615-A", "BUV661-A", "BUV737-A", "BUV805-A", "BV570-A", "BV605-A", "BV650-A", "BV711-A", "BV750-A", "BV785-A",
+"FITC-A", "Spark Blue 550-A", "RB613-A", "PerCP-Cy5.5-A", "PE-A",
+"PE-Dazzle594-A", "PE-Cy5-A", "cFluor BYG750-A", "PE-Cy7-A", "PE-Fire810-A",
+"Alexa Fluor 647-A", "R718-A", "APC-Fire 750-A", "APC-Fire 810-A"), bins=170)
 ```
 
 ```{r}
