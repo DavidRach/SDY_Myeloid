@@ -1,0 +1,214 @@
+---
+title: "Cell Counts Worksheet"
+format: html
+---
+
+```{r}
+#library(dplyr)
+#library(tibble)
+#library(purrr)
+#library(DataEditR)
+
+library(Luciernaga)
+
+#library(flowCore)
+#library(flowWorkspace)
+#library(openCyto)
+```
+
+# Copying the files 
+
+```{r}
+Experiment <- "AB_10"
+```
+
+Either leave date NULL or specify the date name of the LabNotebook folder
+
+```{r}
+#ThisDate <- "2025-08-28"
+ThisDate <- NULL
+
+if (is.null(ThisDate)){
+    ThisDate <- Sys.Date()
+    DayForward <- ThisDate + 1
+} else {
+    ThisDate <- as.Date(ThisDate)
+    DayForward <- ThisDate
+}
+```
+
+If transferring in the CellCount .fcs files, ensure correct USB/external drive is specified
+```{r}
+#Linux <- file.path("/media", "david", "DavidRach")
+Linux <- file.path("/media", "david", "DAVIDRACH")
+#Windows <- file.path("D:")
+Windows <- file.path("E:")
+
+OperatingSystem <- Sys.info()["sysname"]
+if(OperatingSystem == "Linux"){OS <- Linux
+} else if (OperatingSystem == "Windows"){OS <- Windows}
+
+CountFiles <- file.path(OS, "CellCounts")
+
+Folder <- file.path("LabNotebook", DayForward)
+CellCountFolder <- list.files(Folder, pattern="CellCounts$", full.names=TRUE)
+```
+
+```{r}
+if (length(CellCountFolder) == 0){
+    CellCountFolder <- file.path(Folder, "CellCounts")
+    dir.create(CellCountFolder)
+    list.files(Folder, pattern="CellCounts$", full.names=TRUE)
+} else {CellCountFolder <- CellCountFolder}
+
+ExistingFCS <- list.files(CellCountFolder, pattern=".fcs", full.names=TRUE)
+
+if (!length(ExistingFCS) >= 1){
+
+FCSFiles <- list.files(CountFiles, pattern=".fcs", full.names=TRUE)
+files <- FCSFiles[grep(Experiment, FCSFiles)]
+
+Info <- file.info(files)
+Info$sizeMB <- Info$size / 1048576
+
+TooLarge <- Info |> dplyr::filter(sizeMB >= 49)
+if (nrow(TooLarge) > 0){
+    RemoveTheseBeforeCommiting <- TooLarge |> tibble::rownames_to_column(var="bid") |>
+         dplyr::pull(bid) |> basename()
+    TotalRemove <- length(RemoveTheseBeforeCommiting)
+    message(TotalRemove, " files are too large to send to GitHub. Please ensure they are removed")
+}
+
+file.copy(files, CellCountFolder, overwrite=TRUE)
+}
+```
+
+```{r}
+print("Go!")
+```
+
+# Gating the files
+
+```{r}
+library(flowCore)
+library(flowWorkspace)
+library(openCyto)
+
+files <- list.files(CellCountFolder, pattern=".fcs", full.names=TRUE)
+
+MyCytoSet <- load_cytoset_from_fcs(files, truncate_max_range = FALSE,
+                                 transformation = FALSE)
+
+MyGatingSet <- GatingSet(MyCytoSet)
+
+SelectedColumns <- c("V3-A", "B4-A", "R1-A")
+Biexponential <- flowjo_biexp_trans(channelRange=256,
+ maxValue=1000000, pos=5.25, neg=0, width=-1000)
+TransformList <- transformerList(SelectedColumns, Biexponential)
+MyGatingSet <- transform(MyGatingSet, TransformList)
+
+CellCountGates <- data.table::fread("GatesCellCounts.csv")
+CellCountGating <- gatingTemplate(CellCountGates)
+gt_gating(CellCountGating, MyGatingSet)
+```
+
+```{r}
+Plots <- purrr::map(.x=MyGatingSet, .f=Utility_GatingPlots,
+    sample.name=c("GROUPNAME", "TUBENAME"),
+    removestrings=c("Unmixed", "(", ")", ".fcs", " "),
+    gtFile=CellCountGates, 
+    outpath=NULL,
+    returnType="patchwork",
+    plotname=TRUE)
+
+fileName <- paste(Experiment, "CellCount", "Visuals", sep="_")
+
+Utility_Patchwork(x=Plots, filename=fileName, outfolder=CellCountFolder,
+thecolumns = 1, therows=1, returntype="pdf", NotListofList = FALSE,
+patches=TRUE)
+```
+
+```{r}
+print("Go!")
+```
+
+# Deriving Count
+
+```{r}
+#plot(MyGatingSet)
+nameKeyword <- c("GROUPNAME", "TUBENAME")
+
+TheData <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "CD45",
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows()
+
+Notebook <- file.path("LabNotebook", DayForward)
+#list.files(Notebook)
+
+StorageName <- paste0("CellCounts_", DayForward,".csv")
+StorageLocation <- file.path(Notebook, StorageName)
+write.csv(TheData, StorageLocation, row.names=FALSE)
+```
+
+# Updating Volumes for Total
+
+```{r}
+EditableData <- TheData |> dplyr::select(-TotalScientific, -TimeSeconds)
+NewData <- DataEditR::data_edit(EditableData)
+RestData <- Wetlab_Rest(data=NewData, DesiredConcentration_MillionperML=6,
+ MaxMLperTube=1, returntype="data")
+
+Changes <- RestData # Apply a rearrangement protocol to move spin down to correct locations manually
+
+StorageName <- paste0("CellRestCounts_", DayForward,".csv")
+
+ImageName <- paste0("CellRestCounts_", DayForward)
+StorageLocation <- file.path(Notebook, StorageName)
+write.csv(Changes, StorageLocation, row.names=FALSE)
+
+DataPlot <- Luciernaga:::RestTable(data=Changes, outpath=Notebook, filename=ImageName, ColorSelection=NULL, vwidth=1200, outputType="png")
+```
+
+# Derriving Total Counts for record keeping
+
+```{r}
+library(dplyr)
+
+TheVolumeData <- RestData |> dplyr::select(name, TotalVolume)
+
+CD45 <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "CD45",
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+CD45$ConcentrationScientific <- as.numeric(CD45$ConcentrationScientific)
+CD45 <- CD45 |> dplyr::rename("CD45"=ConcentrationScientific)
+
+CD14 <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "CD14",
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+CD14$ConcentrationScientific <- as.numeric(CD14$ConcentrationScientific)
+CD14 <- CD14 |> dplyr::rename("CD14"=ConcentrationScientific)
+
+CD19 <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "V3-A+",
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+CD19$ConcentrationScientific <- as.numeric(CD19$ConcentrationScientific)
+CD19 <- CD19 |> dplyr::rename("CD19"=ConcentrationScientific)
+
+TandNKcells <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "V3-A-",
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+TandNKcells$ConcentrationScientific <- as.numeric(TandNKcells$ConcentrationScientific)
+TandNKcells <- TandNKcells |> dplyr::rename("TandNKcells"=ConcentrationScientific)
+
+Assembly <- left_join(CD45, CD14, by="name")
+Assembly <- left_join(Assembly, CD19, by="name")
+Assembly <- left_join(Assembly, TandNKcells, by="name")
+Assembly <- left_join(Assembly, TheVolumeData, by="name")
+
+ThawCounts <- Assembly |>
+      mutate(across(c(CD45, CD14, CD19, TandNKcells), ~ . * TotalVolume)) |>
+      dplyr::select(-TotalVolume)
+
+FileName <- paste0(DayForward, "_ThawCounts.csv")
+StoreHere <- file.path(Notebook, FileName)
+write.csv(ThawCounts, StoreHere, row.names=FALSE)
+```
+
+```{r}
+print("Go!")
+```

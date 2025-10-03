@@ -1,0 +1,20 @@
+---
+format:
+  pdf:
+    include-in-header:
+      text: |
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \fancyhead[L]{October 02, 2025}
+        \fancyhead[R]{\nouppercase{\leftmark}}
+        \fancyfoot{}
+        \renewcommand{\headrulewidth}{0.4pt}
+---
+  
+Hello World
+
+![](TheTable.png)
+
+```{=latex}
+
+```

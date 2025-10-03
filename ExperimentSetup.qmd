@@ -2,13 +2,29 @@
 title: "Experiment Setup"
 format: html
 ---
+```{r}
+project <-"SDY_Myeloid"
+experiment <- "2025-10-01"
+```
 
 ```{r}
 library(HEULog)
 ```
 
 ```{r}
-NewExperiment(project="SDY_Myeloid", retroactiveDate="2025-08-06", DayHedge=0) 
+NewExperiment(project=project, retroactiveDate=experiment, DayHedge=0) 
+```
+
+```{r}
+AddSpecimens(name="INF018", vials=1, project=project, experiment=experiment)
+AddSpecimens(name="INF109", vials=1, project=project, experiment=experiment)
+AddSpecimens(name="INF200", vials=1, project=project, experiment=experiment)
+AddSpecimens(name="INF193", vials=1, project=project, experiment=experiment)
+AddSpecimens(name="ND006", vials=1, project=project, experiment=experiment)
+```
+
+```{r}
+HEULog:::ExperimentTemplate(extras=2, blankpages=1, experiment=experiment, project=project)
 ```
 
 ```{r}
