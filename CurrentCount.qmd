@@ -1,0 +1,50 @@
+---
+title: "Current Count"
+format: html
+---
+
+```{r}
+CSVs <- list.files(pattern="specimens.csv", recursive=TRUE)
+```
+
+```{r}
+CSV_Extract <- function(x){
+    Data <- utils::read.csv(x, check.names=FALSE)
+    Experiment <- gsub("/specimens.csv", "", fixed=TRUE, x)
+    Experiment <- gsub("LabNotebook/", "", fixed=TRUE, Experiment)
+    Data <- Data |> dplyr::mutate(Experiment=Experiment)
+    return(Data)
+}
+```
+
+```{r}
+Data <- purrr::map(.f=CSV_Extract, .x=CSVs) |> dplyr::bind_rows()
+
+TheBids <- Data |> dplyr::arrange(specimen) |> dplyr::pull(specimen) |> unique()
+```
+
+```{r}
+library(dplyr)
+KingsleyFile <- "/home/david/Desktop/LocalHEU/Kingsley_Aug_2023.csv"
+Metadata <- read.csv(KingsleyFile, check.names=FALSE)
+colnames(Metadata)
+
+Metadata <- Metadata |> select(bid, sid, site, infant_sex, ptype, screen_vl, del_vl, del_cd4, gestage_d1,ncbmc, ninfpbmc4, ninfpbmc9)
+```
+
+```{r}
+Metadata$`bid` <- gsub("INF-", "", Metadata$`bid`)
+Metadata$`bid` <- sub("^0+", "", Metadata$`bid`)
+Metadata$`bid` <- sub("-[0-9]{1}", "", Metadata$`bid`)
+Metadata$bid <- stringr::str_pad(Metadata$bid, 3, pad = "0")
+Metadata <- Metadata %>% mutate(bid = ifelse(grepl("^[0-9]", bid), paste0("INF", bid), bid))
+```
+
+```{r}
+Utilized <- Metadata |> filter(bid %in% TheBids)
+Utilized$ptype <- factor(Utilized$ptype, levels=c("HU", "HEU-lo", "HEU-hi"))
+
+Utilized |> count(ptype, infant_sex)
+
+write.csv(Utilized, "data/SpecimenLog.csv", row.names=FALSE)
+``` 
