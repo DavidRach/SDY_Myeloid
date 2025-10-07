@@ -1,0 +1,5 @@
+"name","Date","CurrentConcentration","TotalVolume","TotalCells","DesiredConcentration","NeededVolume","IncreaseVolumeML","SpinDown","TubeMaxML","TotalTubes"
+"INF003_00_01","03-Sep-2025",9200000,1,"9.2e+06","6e+06","1.5","0.53",FALSE,1,"1.5"
+"INF067_00_01","03-Sep-2025",1.2e+07,1,"1.2e+07","6e+06","2","1",FALSE,1,"2"
+"INF320_00_01","03-Sep-2025",8600000,1,"8.6e+06","6e+06","1.4","0.43",FALSE,1,"1.4"
+"ND006_9","03-Sep-2025",9400000,1,"9.4e+06","6e+06","1.6","0.57",FALSE,1,"1.6"

@@ -19,18 +19,18 @@ library(Luciernaga)
 # Copying the files 
 
 ```{r}
-Experiment <- "AB_10"
+Experiment <- "AB_08"
 ```
 
 Either leave date NULL or specify the date name of the LabNotebook folder
 
 ```{r}
-#ThisDate <- "2025-08-28"
-ThisDate <- NULL
+ThisDate <- "2025-08-27"
+#ThisDate <- NULL
 
 if (is.null(ThisDate)){
     ThisDate <- Sys.Date()
-    DayForward <- ThisDate + 1
+    DayForward <- ThisDate + 0
 } else {
     ThisDate <- as.Date(ThisDate)
     DayForward <- ThisDate
@@ -40,7 +40,7 @@ if (is.null(ThisDate)){
 If transferring in the CellCount .fcs files, ensure correct USB/external drive is specified
 ```{r}
 #Linux <- file.path("/media", "david", "DavidRach")
-Linux <- file.path("/media", "david", "DAVIDRACH")
+Linux <- file.path("/media", "david", "DavidSSD")
 #Windows <- file.path("D:")
 Windows <- file.path("E:")
 
@@ -67,6 +67,10 @@ if (!length(ExistingFCS) >= 1){
 
 FCSFiles <- list.files(CountFiles, pattern=".fcs", full.names=TRUE)
 files <- FCSFiles[grep(Experiment, FCSFiles)]
+
+if (stringr::str_detect(Experiment, "AB_")){
+    files <- files[stringr::str_detect(files, "-Cord|ND006|-00_|-00")]
+}
 
 Info <- file.info(files)
 Info$sizeMB <- Info$size / 1048576
@@ -139,7 +143,7 @@ print("Go!")
 nameKeyword <- c("GROUPNAME", "TUBENAME")
 
 TheData <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "CD45",
-               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows()
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=1) |> dplyr::bind_rows()
 
 Notebook <- file.path("LabNotebook", DayForward)
 #list.files(Notebook)
@@ -176,22 +180,22 @@ library(dplyr)
 TheVolumeData <- RestData |> dplyr::select(name, TotalVolume)
 
 CD45 <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "CD45",
-               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=1) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
 CD45$ConcentrationScientific <- as.numeric(CD45$ConcentrationScientific)
 CD45 <- CD45 |> dplyr::rename("CD45"=ConcentrationScientific)
 
 CD14 <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "CD14",
-               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=1) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
 CD14$ConcentrationScientific <- as.numeric(CD14$ConcentrationScientific)
 CD14 <- CD14 |> dplyr::rename("CD14"=ConcentrationScientific)
 
 CD19 <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "V3-A+",
-               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=1) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
 CD19$ConcentrationScientific <- as.numeric(CD19$ConcentrationScientific)
 CD19 <- CD19 |> dplyr::rename("CD19"=ConcentrationScientific)
 
 TandNKcells <- purrr::map(.x=MyGatingSet, Wetlab_Concentration, subset = "V3-A-",
-               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=0.5) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
+               nameKeyword=nameKeyword, DilutionMultiplier=100, TotalVolume=1) |> dplyr::bind_rows() |> dplyr::select(name, ConcentrationScientific)
 TandNKcells$ConcentrationScientific <- as.numeric(TandNKcells$ConcentrationScientific)
 TandNKcells <- TandNKcells |> dplyr::rename("TandNKcells"=ConcentrationScientific)
 

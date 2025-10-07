@@ -1,0 +1,6 @@
+alias,pop,parent,dims,gating_method,gating_args,collapseDataForGating,groupBy,preprocessing_method,preprocessing_args
+margin,+,root,"FSC-A,SSC-A",boundary,"max=c(4e6,4e6)",FALSE,NA,NA,NA
+CD45,+,margin,B4-A,gate_mindensity,"gate_range=c(200,220)",FALSE,NA,NA,NA
+*,+/-,CD45,SSC-A,gate_mindensity,"gate_range=c(1.33e6,1.66e6)",FALSE,NA,NA,NA
+CD14,+,SSC-A+,R1-A,gate_mindensity,"gate_range=c(100,110)",FALSE,NA,NA,NA
+*,+/-,SSC-A-,V3-A,gate_mindensity,"gate_range=c(145,170)",FALSE,NA,NA,NA
