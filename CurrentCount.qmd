@@ -46,5 +46,7 @@ Utilized$ptype <- factor(Utilized$ptype, levels=c("HU", "HEU-lo", "HEU-hi"))
 
 Utilized |> count(ptype, infant_sex)
 
+Utilized <- Utilized |> arrange(bid)
+
 write.csv(Utilized, "data/SpecimenLog.csv", row.names=FALSE)
 ``` 
